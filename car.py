@@ -47,6 +47,7 @@ def on_open(ws):
 
             cv2.imshow('Frame', frame)
             cv2.imshow('BW', blackWhiteFrame)
+            regionOfInterest(blackWhiteFrame)
 
             # when detecting white lines
             # getLane()
@@ -62,19 +63,27 @@ def on_open(ws):
 
 
 def blur(frame):
+
     bw = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
     blur = cv2.GaussianBlur(bw, (5, 5), 0)
     newCanny = cv2.Canny(blur, 60, 180)
     return newCanny
 
 
-def thresholding(img):
+def regionOfInterest(frame):
+    height, width = frame.shape[:2]
+    ROI = np.array(
+        [[(120, height), (120, 220), (750, 220), (750, height)]], dtype=np.int32)
+    blank = np.zeros_like(frame)
+    region_of_interest = cv2.fillPoly(blank, ROI, 255)
 
-    imgHsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    lowerWhite = np.array([80, 0, 0])
-    upperWhite = np.array([255, 160, 255])
-    maskWhite = cv2.inRange(imgHsv, lowerWhite, upperWhite)
-    return maskWhite
+    region_of_interest_image = cv2.bitwise_and(frame, region_of_interest)
+    cv2.imshow('Region of Interest', region_of_interest_image)
+    if cv2.waitKey(1) == 27:
+        throttle = 0
+        angle = 0
+        message = f"{{\"angle\":{angle},\"throttle\":{throttle},\"drive_mode\":\"user\",\"recording\":false}}"
+        ws.send(message)
 
 
 # def detectLane(frame):
