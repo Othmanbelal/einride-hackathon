@@ -26,9 +26,9 @@ def on_close(ws, close_status_code, close_msg):
 def on_open(ws):
     def run(*args):
         # your car logic here
-        print("hellooooooooooooooooooooo")
+        print("inside onOpen")
         cap = cv2.VideoCapture(video_address)
-        
+
         ret, frame = cap.read()
         height = frame.shape[0]
         width = frame.shape[1]
@@ -42,11 +42,30 @@ def on_open(ws):
             ws.send(message)
             print(message)
 
-            detectLane(frame)
+            # detectLane(frame)
+            blackWhiteFrame = blur(frame)
 
-        cap.release()
-        cv2.destroyAllWindows()
+            cv2.imshow('Frame', frame)
+            cv2.imshow('BW', blackWhiteFrame)
+
+            # when detecting white lines
+            # getLane()
+
+            # stop the car
+            if cv2.waitKey(1) == 27:
+                throttle = 0
+                message = f"{{\"angle\":{angle},\"throttle\":{throttle},\"drive_mode\":\"user\",\"recording\":false}}"
+                ws.send(message)
+                break
+
     _thread.start_new_thread(run, ())
+
+
+def blur(frame):
+    bw = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+    blur = cv2.GaussianBlur(bw, (5, 5), 0)
+    newCanny = cv2.Canny(blur, 60, 180)
+    return newCanny
 
 
 def thresholding(img):
@@ -58,11 +77,10 @@ def thresholding(img):
     return maskWhite
 
 
-def detectLane(frame):
-    cv2.imshow('Frame', frame)
-    cv2.waitKey(1)
-    imgThres = thresholding(frame)
-    cv2.imshow('Thres', imgThres)
+# def detectLane(frame):
+
+    #imgThres = thresholding(frame)
+    #cv2.imshow('Thres', imgThres)
 
 
 if __name__ == "__main__":
